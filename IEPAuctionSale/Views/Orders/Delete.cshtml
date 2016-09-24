@@ -1,0 +1,65 @@
+﻿@model IEPAuctionSale.Models.Order
+
+@{
+    ViewBag.Title = "Delete";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<h2>Delete</h2>
+
+<h3>Are you sure you want to delete this?</h3>
+<div>
+    <h4>Order</h4>
+    <hr />
+    <dl class="dl-horizontal">
+        <dt>
+            @Html.DisplayNameFor(model => model.AccountId)
+        </dt>
+
+        <dd>
+            @Html.DisplayFor(model => model.AccountId)
+        </dd>
+
+        <dt>
+            @Html.DisplayNameFor(model => model.NoTokens)
+        </dt>
+
+        <dd>
+            @Html.DisplayFor(model => model.NoTokens)
+        </dd>
+
+        <dt>
+            @Html.DisplayNameFor(model => model.PriceOfPackage)
+        </dt>
+
+        <dd>
+            @Html.DisplayFor(model => model.PriceOfPackage)
+        </dd>
+
+        <dt>
+            @Html.DisplayNameFor(model => model.TimeOrdered)
+        </dt>
+
+        <dd>
+            @Html.DisplayFor(model => model.TimeOrdered)
+        </dd>
+
+        <dt>
+            @Html.DisplayNameFor(model => model.StatusIndicatior)
+        </dt>
+
+        <dd>
+            @Html.DisplayFor(model => model.StatusIndicatior)
+        </dd>
+
+    </dl>
+
+    @using (Html.BeginForm()) {
+        @Html.AntiForgeryToken()
+
+        <div class="form-actions no-color">
+            <input type="submit" value="Delete" class="btn btn-default" /> |
+            @Html.ActionLink("Back to List", "Index")
+        </div>
+    }
+</div>

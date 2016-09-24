@@ -1,0 +1,122 @@
+﻿@model IEPAuctionSale.Models.Auction
+@using IEPAuctionSale.Models
+@using Microsoft.AspNet.Identity;
+
+@{
+    ViewBag.Title = "Details";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.4/jquery.min.js"></script>
+@section scripts
+{
+    @Scripts.Render("~/Scripts/jquery.signalR-2.2.1.min.js")
+    @Scripts.Render("~/signalr/hubs")
+    @Scripts.Render("~/Scripts/auctions_script/auctions_bidding.js")
+}
+
+@{
+    var timeId = "time" + Model.Id;
+    var priceId = "price" + Model.Id;
+    var stateId = "state" + Model.Id;
+    var nameId = "name" + Model.Id;
+
+    //time state
+    TimeSpan difference = new TimeSpan(0);
+    if (Model.TimeClosed != null && DateTime.Now <= (DateTime)Model.TimeClosed)
+    {
+        difference = ((DateTime)Model.TimeClosed).Subtract(DateTime.Now);
+    }
+    string timeRemaining = difference.ToString(@"dd\:hh\:mm\:ss");
+
+    //name state
+    string fullName = "No bids in the system.";
+    if (Model.StartingPrice != Model.CurrentPrice)
+    {
+        fullName = Model.User.Name + " " + Model.User.Surname;
+    }
+}
+
+<h2>Details</h2>
+<div class="container">
+    <h4>Auction</h4>
+    <div style="border-radius:10px;padding-left:10px;padding-right:10px" class="thumbnail row">
+        <div class="col-xs-6">
+            <h3 class="text-center">@Model.ProductName</h3>
+            <a href='@Url.Action("Details", "Auctions", new { id = Model.Id })'>
+                @{
+                    switch (Model.State)
+                    {
+                        case "SOLD":
+                <img style="border-radius:3px" class="img-rounded img-responsive" src="https://weptile.com/wp-content/uploads/2015/09/Sold.png" />
+                            break;
+                        case "EXPIRED":
+                <img style="border-radius:3px" class="img-rounded img-responsive" src="http://www.chinaodysseytours.com/theme/v3/images/promotion/expired.png" />
+                            break;
+                        default:
+                <img style="border-radius:3px;max-height:500px;max-width:500px" class="img-rounded img-responsive" src="data:image;base64,@System.Convert.ToBase64String(Model.ProductPicture)" />
+                            break;
+                    }
+                }
+            </a>
+            <div class="caption">
+                <center>
+                    <h4 id="@timeId" style="color:orangered"> @timeRemaining</h4>
+                    <h4 id="@priceId" style="color:darkseagreen">$@Model.CurrentPrice</h4>
+                    <h4 id="@nameId">@fullName</h4>
+                    <h5 id="@stateId" style="color:deepskyblue">@Model.State</h5>
+                    @if (!User.IsInRole("Admin") && User.Identity.IsAuthenticated && Model.State == "OPEN")
+                    {
+                    <input id="@Model.Id" type="button" class="btn btn-success bidButton" value="Bid Now" />
+                    <input type="hidden" id="userId" value="@User.Identity.GetUserId()" />
+                    }
+                </center>
+                @if (Model.State == "OPEN")
+            {
+                <input type="hidden" class="auction" value="@Model.Id" />
+                }
+            </div>
+        </div>
+        <div class="col-xs-6">
+            <table id="bidtable" class="table table-responsive">
+                <tr>
+                    <th>
+                        User - Bidder
+                    </th>
+                    <th>
+                        Bid Price
+                    </th>
+                </tr>
+                @{  var bids = Model.Bids.OrderByDescending(b => b.TimeBidded).ToList();
+                    var unitPrice = Model.StartingPrice == 0 ? 1 : (int)Math.Ceiling(Model.StartingPrice * 0.1);
+                    var i = 0;
+                    foreach (var item in bids.Take(Math.Min(10, bids.Count)))
+                    {
+                        var price = Model.CurrentPrice - unitPrice * i++;
+                        var user = new ApplicationDbContext().Users.Find(item.AccountId);
+                        <tr>
+                            <td>
+                                @user.Name @user.Surname
+                            </td>
+                            <td>
+                                @price
+                            </td>
+                        </tr>
+                    }
+                }
+            </table>
+        </div>
+    </div>
+</div>
+<p>
+    @if (User.IsInRole("Admin") && Model.State == "READY")
+    {
+    @Html.ActionLink("Delete", "Delete", new { id = Model.Id })
+    <text> | </text>
+    @Html.ActionLink("Edit", "Edit", new { id = Model.Id })
+    <text> | </text>
+    @Html.ActionLink("Open", "Open", new { id = Model.Id })
+    <text> | </text>
+    }
+    @Html.ActionLink("Back to List", "Index")
+</p>

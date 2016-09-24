@@ -1,0 +1,64 @@
+﻿@model IEPAuctionSale.Models.IndexViewModel
+@{
+    ViewBag.Title = "Manage Account";
+}
+
+<head>
+    <script type="text/javascript" src="http://stage.centili.com/widget/js/c-mobile-payment-scripts.js"></script>
+</head>
+
+<h2>@ViewBag.Title</h2>
+
+<p class="text-success">@ViewBag.StatusMessage</p>
+<div>
+    <dl class="dl-horizontal">
+        <h3>Personal Info:</h3>
+        <dt>Password:</dt>
+        <dd>
+            [
+            @if (Model.HasPassword)
+            {
+                @Html.ActionLink("Change your password", "ChangePassword")
+            }
+            else
+            {
+                @Html.ActionLink("Create", "SetPassword")
+            }
+            ]
+        </dd>
+        <dt>
+            @Html.DisplayNameFor(model => model.Name)
+        </dt>
+        <dd>
+            @Html.DisplayFor(model => model.Name)
+        </dd>
+        <dt>
+            @Html.DisplayNameFor(model => model.Surname)
+        </dt>
+        <dd>
+            @Html.DisplayFor(model => model.Surname)
+        </dd>
+        <dt>
+            @Html.DisplayNameFor(model => model.Email)
+        </dt>
+        <dd>
+            @Html.DisplayFor(model => model.Email)
+        </dd>
+    </dl>
+
+    @if (!User.IsInRole("Admin"))
+    {
+        @Html.ActionLink("Change Info", "ChangeInfo")
+
+        <div style="width:300px;margin-top:30px"class="thumbnail text-center">
+            Number of Tokens: @Model.Tokens
+            <br/>
+            @using (Html.BeginForm("OrderTokens", "Orders", FormMethod.Post))
+            {
+                @Html.AntiForgeryToken()
+                <input type="submit" style="margin-top:10px"class="btn btn-sm btn-success" value="Get Tokens" />
+            }
+        </div>
+    }
+
+</div>

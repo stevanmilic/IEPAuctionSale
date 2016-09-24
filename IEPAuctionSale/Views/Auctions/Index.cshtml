@@ -1,0 +1,133 @@
+﻿@model PagedList.IPagedList<IEPAuctionSale.Models.Auction>
+@using PagedList.Mvc;
+@using Microsoft.AspNet.Identity;
+
+@{
+    ViewBag.Title = "Auctions";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.4/jquery.min.js"></script>
+@section scripts
+{
+    @Scripts.Render("~/Scripts/jquery.signalR-2.2.1.min.js")
+    @Scripts.Render("~/signalr/hubs")
+    @Scripts.Render("~/Scripts/auctions_script/auctions_bidding.js")
+}
+<h2>Auctions</h2>
+
+@if (User.IsInRole("Admin"))
+{
+    <p>
+        @Html.ActionLink("Create New", "Create")
+    </p>
+}
+
+
+<input type="hidden" id="userId" value="@User.Identity.GetUserId()" />
+
+<div class="container" style="margin-bottom:20px">
+    @using (Html.BeginForm("Index", "Auctions", FormMethod.Get, new { @class = "form-inline" }))
+    {
+        <div class="form-group">
+            @Html.Label("Name:")
+            @Html.TextBox("searchStringProduct", ViewBag.CurrentSearchProduct as string, new { @class = "form-control" })
+        </div>
+        <div class="form-group">
+            @Html.Label(" Auction State: ")
+            <select class="form-control" name="searchState" selected="@ViewBag.CurrentState">
+                <option value=""></option>
+                <option value="OPEN">Open</option>
+                <option value="SOLD">Sold</option>
+                <option value="EXPIRED">Expired</option>
+                <option value="READY">Ready</option>
+            </select>
+        </div>
+        <div class="form-group">
+            @Html.Label("Minimal Product Price:")
+            <input class="form-control" type="number" id="minPrice" name="minPrice" min="0" data-bind="value:minPrice" step="1" value="@ViewBag.CurrentMinPrice" />
+        </div>
+        <div class="form-group">
+            @Html.Label("Max price:")
+            <input class="form-control" type="number" id="maxPrice" name="maxPrice" min="0" data-bind="value:maxPrice" step="1" value="@ViewBag.CurrentMaxPrice" />
+        </div>
+        <input type="submit" class="btn btn-primary form-control" value="Search" />
+    }
+</div>
+
+<div class="row container">
+    @foreach (var item in Model)
+    {
+        <div class="col-lg-3 col-md-4 col-xs-6 thumb pull">
+            <div style="border-radius:10px;padding-left:10px;padding-right:10px" class="thumbnail">
+                @{
+                    var timeId = "time" + item.Id;
+                    var priceId = "price" + item.Id;
+                    var stateId = "state" + item.Id;
+                    var nameId = "name" + item.Id;
+
+                    //time state
+                    TimeSpan difference = new TimeSpan(0);
+                    if (item.TimeClosed != null && DateTime.Now <= (DateTime)item.TimeClosed)
+                    {
+                        difference = ((DateTime)item.TimeClosed).Subtract(DateTime.Now);
+                    }
+                    string timeRemaining = difference.ToString(@"dd\:hh\:mm\:ss");
+
+                    //name state
+                    string fullName = "No bids in the system.";
+                    if (item.StartingPrice != item.CurrentPrice)
+                    {
+                        fullName = item.User.Name + " " + item.User.Surname;
+                    }
+                }
+                <h3 class="text-center">@item.ProductName</h3>
+                <a href='@Url.Action("Details", "Auctions", new {id = item.Id })'>
+                    @{
+                        switch (item.State)
+                        {
+                            case "SOLD":
+                                <img style="height:300px;height:200px;border-radius:3px" class="img-rounded img-responsive" src="https://weptile.com/wp-content/uploads/2015/09/Sold.png" />
+                                break;
+                            case "EXPIRED":
+                                <img style="height:300px;height:200px;border-radius:3px" class="img-rounded img-responsive" src="http://www.chinaodysseytours.com/theme/v3/images/promotion/expired.png" />
+                                break;
+                            default:
+                                <img style="height:300px;height:200px;border-radius:3px" class="img-rounded " src="data:image;base64,@System.Convert.ToBase64String(item.ProductPicture)" />
+                                break;
+                        }
+                    }
+                </a>
+                <div class="caption">
+                    <center>
+                        <h4 id="@timeId" style="color:orangered"> @timeRemaining</h4>
+                        <h4 id="@priceId" style="color:darkseagreen">$@item.CurrentPrice</h4>
+                        <h4 id="@nameId">@fullName</h4>
+                        <h5 id="@stateId" style="color:deepskyblue">@item.State</h5>
+                        @if (!User.IsInRole("Admin") && User.Identity.IsAuthenticated && item.State == "OPEN")
+                        {
+                            <input id="@item.Id" type="button" class="btn btn-success bidButton" value="Bid Now" />
+                        }
+                    </center>
+                </div>
+                @if (User.IsInRole("Admin") && item.State == "READY")
+                {
+                    @Html.ActionLink("Delete", "Delete", new { id = item.Id })
+                    <text> | </text>
+                    @Html.ActionLink("Edit", "Edit", new { id = item.Id })
+                    <text> | </text>
+                    @Html.ActionLink("Open", "Open", new { id = item.Id })
+                }
+                @if (item.State == "OPEN")
+                {
+                    <input type="hidden" class="auction" value="@item.Id" />
+                }
+            </div>
+        </div>
+        }
+</div>
+
+
+Page @(Model.PageCount < Model.PageNumber ? 0 : Model.PageNumber) of @Model.PageCount
+@Html.PagedListPager(Model, page => Url.Action("Index", "Auctions", new { page, currentStringProduct = ViewBag.CurrentSearch, currentMinPrice = ViewBag.CurrentMin, currentMaxPrice = ViewBag.CurrentMax, currentState = ViewBag.CurrentState }))
